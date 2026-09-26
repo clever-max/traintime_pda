@@ -10,7 +10,12 @@ import 'package:file_picker/file_picker.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
 
-Future<PlatformFile?> pickFile({FileType type = FileType.any}) async {
+const imageFileExtensions = ['jpg', 'jpeg', 'png'];
+
+Future<PlatformFile?> pickFile({
+  FileType type = FileType.any,
+  List<String>? allowedExtensions,
+}) async {
   if (Platform.isAndroid) {
     // On Android 8-10 we must be sure to query for the `storage` permission
     // before engaging an image-based file-picker
@@ -24,7 +29,18 @@ Future<PlatformFile?> pickFile({FileType type = FileType.any}) async {
   }
   // Ref. https://github.com/miguelpruivo/flutter_file_picker/issues/1584
   // Disable compression:P
-  return await FilePicker.pickFile(type: type, compressionQuality: 0);
+  return await FilePicker.pickFile(
+    type: type,
+    allowedExtensions: allowedExtensions,
+    compressionQuality: 0,
+  );
+}
+
+Future<PlatformFile?> pickImageFile() {
+  final type = Platform.isAndroid || Platform.isIOS
+      ? FileType.image
+      : FileType.custom;
+  return pickFile(type: type, allowedExtensions: imageFileExtensions);
 }
 
 class MissingStoragePermissionException implements Exception {}

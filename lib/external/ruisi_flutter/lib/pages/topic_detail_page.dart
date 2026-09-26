@@ -148,15 +148,18 @@ class _TopicDetailPageState extends State<TopicDetailPage> {
   }
 
   Future<void> _pickReplyImage() async {
-    final file = await pickFile();
+    final file = await pickImageFile();
     if (file == null) return;
     if (!mounted) return;
 
-    final ext = file.name.toLowerCase();
-    const allowed = {'jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'};
-    if (!allowed.contains(ext)) {
+    final ext = file.name.split('.').last.toLowerCase();
+    if (!imageFileExtensions.contains(ext)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('仅支持 jpg/jpeg/png/gif/bmp/webp 图片')),
+        SnackBar(
+          content: Text(
+            FlutterI18n.translate(context, 'ruisi.common.image_file_type'),
+          ),
+        ),
       );
       return;
     }

@@ -88,15 +88,18 @@ class _NewPostPageState extends State<NewPostPage> {
       return;
     }
 
-    final file = await pickFile();
+    final file = await pickImageFile();
     if (file == null) return;
     if (!mounted) return;
 
-    final ext = file.name.toLowerCase();
-    const allowed = {'jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'};
-    if (!allowed.contains(ext)) {
+    final ext = file.name.split('.').last.toLowerCase();
+    if (!imageFileExtensions.contains(ext)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('仅支持 jpg/jpeg/png/gif/bmp/webp 图片')),
+        SnackBar(
+          content: Text(
+            FlutterI18n.translate(context, 'ruisi.common.image_file_type'),
+          ),
+        ),
       );
       return;
     }
@@ -294,12 +297,25 @@ class _NewPostPageState extends State<NewPostPage> {
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Icon(Icons.image_outlined),
-                  tooltip: '上传图片',
+                  tooltip: FlutterI18n.translate(
+                    context,
+                    'ruisi.common.upload_image',
+                  ),
                   onPressed: _uploading || !_canUpload
                       ? null
                       : _pickAndUploadImage,
                 ),
               ],
+            ),
+            Padding(
+              padding: const EdgeInsets.only(left: 12, top: 4),
+              child: Text(
+                FlutterI18n.translate(
+                  context,
+                  'ruisi.common.image_upload_hint',
+                ),
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
             ),
 
             // 表情面板

@@ -1468,6 +1468,9 @@ ruisi:
     logout: Log out
     logged_out: Logged out
     submit: Submit
+    upload_image: Upload image
+    image_file_type: Only jpg, jpeg, and png images are supported
+    image_upload_hint: 'File size: no limit; allowed extensions: jpg, jpeg, png'
   about:
     title: About
     app_name: Ruisi
