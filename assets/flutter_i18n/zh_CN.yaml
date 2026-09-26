@@ -1399,6 +1399,8 @@ ruisi:
     hint: 搜索帖子...
     input_hint: 输入关键词搜索
     no_results: 无搜索结果
+    history_title: 搜索历史
+    clear_history: 清空历史
   settings:
     title: 设置
     section_proxy: 代理

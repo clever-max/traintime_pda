@@ -1568,6 +1568,8 @@ ruisi:
     hint: Search topics...
     input_hint: Enter keywords to search
     no_results: No results
+    history_title: Search history
+    clear_history: Clear history
   settings:
     title: Settings
     section_proxy: Proxy

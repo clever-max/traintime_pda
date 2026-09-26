@@ -1442,6 +1442,8 @@ ruisi:
     hint: 搜索帖子...
     input_hint: 輸入關鍵詞搜索
     no_results: 無搜索結果
+    history_title: 搜索歷史
+    clear_history: 清空歷史
   settings:
     title: 設置
     section_proxy: 代理
