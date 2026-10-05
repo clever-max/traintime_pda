@@ -3,10 +3,10 @@
 
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:get_it/get_it.dart';
 import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
-import 'package:flutter_i18n/flutter_i18n.dart';
+import 'package:watermeter/generated/translations.g.dart';
 import 'package:watermeter/page/public_widget/context_extension.dart';
 
 import '../models/topic.dart';
@@ -77,37 +77,20 @@ class _SearchPageState extends State<SearchPage> {
 
   Widget _buildSearchHistory(BuildContext context) {
     if (_searchHistory.isEmpty) {
-      return Center(
-        child: Text(FlutterI18n.translate(context, 'ruisi.search.input_hint')),
-      );
+      return Center(child: Text(context.t.ruisi.search.inputHint));
     }
 
     return ListView(
       padding: const EdgeInsets.symmetric(vertical: 8),
-      children: [
-        ListTile(
-          title: Text(
-            FlutterI18n.translate(context, 'ruisi.search.history_title'),
-          ),
-          trailing: TextButton(
-            onPressed: () async {
-              await _ruisiService.settings.clearSearchHistory();
-              if (mounted) setState(() => _searchHistory = []);
-            },
-            child: Text(
-              FlutterI18n.translate(context, 'ruisi.search.clear_history'),
+      children: _searchHistory
+          .map(
+            (keyword) => ListTile(
+              leading: const Icon(Icons.history),
+              title: Text(keyword),
+              onTap: () => _submitSearch(keyword),
             ),
-          ),
-        ),
-        const Divider(height: 1),
-        ..._searchHistory.map(
-          (keyword) => ListTile(
-            leading: const Icon(Icons.history),
-            title: Text(keyword),
-            onTap: () => _submitSearch(keyword),
-          ),
-        ),
-      ],
+          )
+          .toList(),
     );
   }
 
@@ -119,7 +102,7 @@ class _SearchPageState extends State<SearchPage> {
           controller: _textEditingController,
           autofocus: true,
           decoration: InputDecoration(
-            hintText: FlutterI18n.translate(context, 'ruisi.search.hint'),
+            hintText: context.t.ruisi.search.hint,
             border: InputBorder.none,
           ),
           onChanged: (value) {

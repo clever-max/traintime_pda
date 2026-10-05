@@ -71,7 +71,6 @@ class SettingsService {
     if (password != null) {
       await _prefs.setString(_keyPassword, password);
     }
-    await _prefs.reloadCache();
   }
 
   Future<void> logout() async {
@@ -83,13 +82,11 @@ class SettingsService {
     await _prefs.remove(_keyUsername);
     await _prefs.remove(_keyFormhash);
     await _prefs.remove(_keyPassword);
-    await _prefs.reloadCache();
   }
 
   Future<void> updateFormhash(String formhash) async {
     _formhash = formhash;
     await _prefs.setString(_keyFormhash, formhash);
-    await _prefs.reloadCache();
   }
 
   Future<List<String>> addSearchHistory(String keyword) async {
@@ -105,12 +102,10 @@ class SettingsService {
     }
 
     await _prefs.setString(_keySearchHistory, jsonEncode(history));
-    await _prefs.reloadCache();
     return List.unmodifiable(history);
   }
 
   Future<void> clearSearchHistory() async {
     await _prefs.remove(_keySearchHistory);
-    await _prefs.reloadCache();
   }
 }

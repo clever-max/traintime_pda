@@ -9,6 +9,7 @@ import 'package:encrypter_plus/encrypter_plus.dart';
 import 'package:html/dom.dart';
 import 'package:html/parser.dart';
 import 'package:pointycastle/asymmetric/api.dart';
+import 'package:watermeter/generated/translations.g.dart';
 import 'package:watermeter/model/fetch_result.dart';
 import 'package:watermeter/model/network_usage.dart';
 import 'package:watermeter/model/password_exceptions.dart';
@@ -16,12 +17,18 @@ import 'package:watermeter/repository/logger.dart';
 import 'package:watermeter/repository/network_client.dart';
 import 'package:watermeter/repository/preference.dart' as prefs;
 
-class SchoolnetSession {
-  static const _cacheHintCaptchaFailedKey =
-      "school_net.cache_hint_captcha_failed";
-  static const _cacheHintRequestFailedKey =
-      "school_net.cache_hint_request_failed";
+enum SchoolnetCacheHint implements CacheHint {
+  captchaFailed,
+  requestFailed;
 
+  @override
+  String resolve(Translations tr) => switch (this) {
+    captchaFailed => tr.schoolNet.cacheHintCaptchaFailed,
+    requestFailed => tr.schoolNet.cacheHintRequestFailed,
+  };
+}
+
+class SchoolnetSession extends NetworkClients {
   static GeneralNetworkUsage? _generalUsageCache;
   static DateTime _generalUsageCacheFetchTime = DateTime.now();
 
@@ -68,9 +75,12 @@ class SchoolnetSession {
       parse(page).getElementsByTagName("tr").forEach((value) {
         var tdList = value.getElementsByTagName("td");
         if (tdList.length == 7) {
-          String usedT = tdList[2].innerHtml;
+          /// 表格的列是「用户名 | IP地址 | 上线时间 | v4入流量 | 产品名称」，
+          /// 所以第 3 列是上线时间、第 4 列才是流量。以前这两列取反了，
+          /// 页面上「上线时间」一栏显示的是流量。
+          String usedT = tdList[3].innerHtml;
           if (usedT.isNotEmpty) {
-            ipList.add((tdList[1].innerHtml, tdList[3].innerHtml, usedT));
+            ipList.add((tdList[1].innerHtml, tdList[2].innerHtml, usedT));
           }
         } else if (tdList.length == 4) {
           // 改为排除法：当 productName 中不包含运营商关键词（联通/移动/电信）时才保存，
@@ -107,12 +117,12 @@ class SchoolnetSession {
         error == "homepage.school_net.failed";
   }
 
-  String? _cacheHintFromError(Object error) {
+  SchoolnetCacheHint? _cacheHintFromError(Object error) {
     if (error == "school_net.captcha_failed") {
-      return _cacheHintCaptchaFailedKey;
+      return SchoolnetCacheHint.captchaFailed;
     }
     if (error is DioException || error == "homepage.school_net.failed") {
-      return _cacheHintRequestFailedKey;
+      return SchoolnetCacheHint.requestFailed;
     }
     return null;
   }
@@ -298,7 +308,7 @@ class SchoolnetSession {
         return FetchResult.cache(
           fetchTime: _generalUsageCacheFetchTime,
           data: _generalUsageCache!,
-          hintKey: _cacheHintFromError(e),
+          cacheHint: _cacheHintFromError(e),
         );
       }
       rethrow;

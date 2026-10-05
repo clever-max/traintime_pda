@@ -5,7 +5,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:signals/signals.dart';
 import 'package:watermeter/controller/classtable_controller.dart';
 import 'package:watermeter/controller/custom_class_controller.dart';
@@ -14,6 +14,7 @@ import 'package:watermeter/controller/global_timer_controller.dart';
 import 'package:watermeter/controller/other_experiment_controller.dart';
 import 'package:watermeter/controller/physics_experiment_controller.dart';
 import 'package:watermeter/controller/week_swift_controller.dart';
+import 'package:watermeter/model/fetch_result.dart';
 import 'package:watermeter/model/pda_service/custom_class.dart';
 import 'package:watermeter/model/xidian_ids/classtable.dart';
 import 'package:watermeter/model/xidian_ids/exam.dart';
@@ -42,8 +43,15 @@ class ClassTableState extends InheritedWidget {
 
   @override
   bool updateShouldNotify(covariant ClassTableState oldWidget) {
-    controllers.chosenWeek = oldWidget.controllers.chosenWeek;
-    return true;
+    /// This widget is provided again with every rebuild (the classtable sheet
+    /// is given the room which is really left for it), so it must not touch
+    /// the controllers unless they actually changed: the setter notifies, and
+    /// that notification would rebuild this very widget again.
+    if (!identical(controllers, oldWidget.controllers)) {
+      controllers.chosenWeek = oldWidget.controllers.chosenWeek;
+      return true;
+    }
+    return constraints != oldWidget.constraints;
   }
 }
 
@@ -124,7 +132,7 @@ class ClassTableWidgetState with ChangeNotifier {
   bool get isClassTableFromCache =>
       classTableController.isClassTableFromCacheComputedSignal.value;
 
-  String? get classTableCacheHintKey =>
+  CacheHint? get classTableCacheHintKey =>
       classTableController.classTableCacheHintKeyComputedSignal.value;
 
   DateTime? get classTableFetchTime =>
@@ -137,7 +145,7 @@ class ClassTableWidgetState with ChangeNotifier {
 
   bool get isExamFromCache => examController.isExamFromCache.value;
 
-  String? get examCacheHintKey => examController.examCacheHintKey.value;
+  CacheHint? get examCacheHintKey => examController.examCacheHintKey.value;
 
   bool get isPhysicsExperimentLoading =>
       physicsExperimentController.physicsExperimentStateSignal.value.isLoading;
@@ -149,7 +157,7 @@ class ClassTableWidgetState with ChangeNotifier {
   bool get isPhysicsExperimentFromCache =>
       physicsExperimentController.isPhysicsExperimentFromCache.value;
 
-  String? get physicsExperimentCacheHintKey =>
+  CacheHint? get physicsExperimentCacheHintKey =>
       physicsExperimentController.physicsExperimentCacheHintKey.value;
 
   bool get isOtherExperimentLoading =>
@@ -161,7 +169,7 @@ class ClassTableWidgetState with ChangeNotifier {
   bool get isOtherExperimentFromCache =>
       otherExperimentController.isOtherExperimentFromCache.value;
 
-  String? get otherExperimentCacheHintKey =>
+  CacheHint? get otherExperimentCacheHintKey =>
       otherExperimentController.otherExperimentCacheHintKey.value;
 
   bool get hasExamArrangement => examController.hasExamArrangement.value;
@@ -223,9 +231,10 @@ class ClassTableWidgetState with ChangeNotifier {
 
   /// Change chosen week.
   set chosenWeek(int chosenWeek) {
-    if (chosenWeek != _chosenWeek) {
-      _chosenWeek = chosenWeek;
+    if (chosenWeek == _chosenWeek) {
+      return;
     }
+    _chosenWeek = chosenWeek;
     notifyListeners();
   }
 
