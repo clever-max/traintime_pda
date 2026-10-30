@@ -19,6 +19,9 @@ import '../models/post_page_meta.dart';
 import '../repository/ruisi_api.dart';
 import 'settings_service.dart';
 
+/// 会话校验结果；unavailable 表示请求失败，不能据此判定登录失效。
+enum SessionValidationResult { valid, invalid, unavailable }
+
 /// 业务 API 服务
 ///
 /// 基于 [RuisiApi] 的底层 HTTP 能力，封装论坛业务逻辑。
@@ -265,17 +268,23 @@ class ApiService {
     }
   }
 
-  Future<bool> validateSession() async {
+  Future<SessionValidationResult> validateSessionState() async {
     _api.talker.info('正在验证会话有效性...');
     final (ok, body) = await _api.get('${Urls.baseUrl}home.php?mod=space');
     if (!ok) {
       _api.talker.warning('会话验证请求失败');
-      return false;
+      return SessionValidationResult.unavailable;
     }
     final valid = !body.contains('请先登录后才能继续浏览');
-    _api.talker.info('会话有效性: $valid');
-    return valid;
+    final result = valid
+        ? SessionValidationResult.valid
+        : SessionValidationResult.invalid;
+    _api.talker.info('会话有效性: $result');
+    return result;
   }
+
+  Future<bool> validateSession() async =>
+      await validateSessionState() == SessionValidationResult.valid;
 
   // =========================================================================
   // 板块列表

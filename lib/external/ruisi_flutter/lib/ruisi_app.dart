@@ -5,8 +5,10 @@ import 'package:material_ui/material_ui.dart';
 import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:talker_flutter/talker_flutter.dart';
+import 'package:watermeter/generated/translations.g.dart';
 
 import 'controller/ruisi_controller.dart';
+import 'services/api_service.dart';
 import 'pages/home_page.dart';
 import 'pages/login_page.dart';
 import 'widgets/captcha_dialog.dart';
@@ -34,6 +36,7 @@ class _RuisiAppState extends State<RuisiApp>
   /// 会话检查状态：null=未登录, true=有效, false=失效
   bool? _sessionValid;
   bool _checking = false;
+  bool _networkUnavailable = false;
 
   RuisiService get _c => GetIt.instance<RuisiService>();
 
@@ -69,9 +72,11 @@ class _RuisiAppState extends State<RuisiApp>
       if (_c.isLoggedIn) {
         _checking = true;
         _sessionValid = null;
+        _networkUnavailable = false;
       } else {
         _checking = false;
         _sessionValid = null;
+        _networkUnavailable = false;
       }
     });
 
@@ -82,13 +87,24 @@ class _RuisiAppState extends State<RuisiApp>
 
   /// 会话有效性检测 + 三层续登。
   Future<void> _checkSession() async {
-    final valid = await _c.api.validateSession();
+    final validation = await _c.api.validateSessionState();
     if (!mounted) return;
 
-    if (valid) {
+    if (validation == SessionValidationResult.valid) {
       setState(() {
         _sessionValid = true;
         _checking = false;
+        _networkUnavailable = false;
+      });
+      return;
+    }
+
+    // 请求失败时无法区分会话失效和断网/非校园网，保留登录态并让用户重试。
+    if (validation == SessionValidationResult.unavailable) {
+      setState(() {
+        _sessionValid = null;
+        _checking = false;
+        _networkUnavailable = true;
       });
       return;
     }
@@ -102,6 +118,7 @@ class _RuisiAppState extends State<RuisiApp>
         setState(() {
           _sessionValid = true;
           _checking = false;
+          _networkUnavailable = false;
         });
       case SessionRefreshResult.needCaptcha:
         // 弹出验证码弹窗
@@ -110,11 +127,13 @@ class _RuisiAppState extends State<RuisiApp>
         setState(() {
           _sessionValid = dialogOk;
           _checking = false;
+          _networkUnavailable = false;
         });
       case SessionRefreshResult.failed:
         setState(() {
           _sessionValid = false;
           _checking = false;
+          _networkUnavailable = false;
         });
     }
   }
@@ -125,6 +144,45 @@ class _RuisiAppState extends State<RuisiApp>
     if (!_c.isLoggedIn) return const LoginPage();
     if (_checking) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+    if (_networkUnavailable) {
+      return Scaffold(
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.wifi_off, size: 48),
+                const SizedBox(height: 16),
+                Text(
+                  context.t.common.notSchoolNetwork,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  context.t.common.networkError,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                FilledButton.tonal(
+                  onPressed: () {
+                    setState(() {
+                      _checking = true;
+                      _sessionValid = null;
+                      _networkUnavailable = false;
+                    });
+                    WidgetsBinding.instance.addPostFrameCallback(
+                      (_) => _checkSession(),
+                    );
+                  },
+                  child: Text(context.t.ruisi.common.retry),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
     }
     return _sessionValid == true ? const HomePage() : const LoginPage();
   }
